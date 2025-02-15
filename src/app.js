@@ -13,7 +13,7 @@ import { faker } from '@faker-js/faker';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3001' }));
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -29,11 +29,11 @@ app.use('/api/disasters', disasterRoutes);
 
 // Serve static files from React frontend
 const __dirname = path.resolve(); // Necessary if using ES modules
-app.use(express.static(path.join(__dirname, 'frontend-main/build')));
+app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Serve React app for non-API routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend-main/build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
 
 const server = http.createServer(app);

@@ -68,6 +68,28 @@ const generateFakeReport = () => {
   };
 };
 
+const saveFakeReportToMongo = async (newReport) => {
+  try {
+    const disaster = new Disaster({
+      name: newReport.victimName,
+      type: 'Disaster',
+      location: {
+        type: 'Point',
+        coordinates: [newReport.location.longitude, newReport.location.latitude],
+      },
+      severity: mapSeverityToNumber(newReport.severity),
+      startDate: new Date(),
+      description: `Needs: ${newReport.needs.join(', ')}`,
+      affectedAreas: [],
+    });
+
+    await disaster.save();
+    console.log('Disaster saved to MongoDB:', disaster);
+  } catch (error) {
+    console.error('Error saving to MongoDB:', error);
+  }
+};
+
 
 io.on('connection', (socket) => {
   console.log('New client connected');

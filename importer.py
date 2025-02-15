@@ -47,9 +47,15 @@ def update_graph(n):
 
     data['startDate'] = pd.to_datetime(data['startDate'])
 
+    roll_size = 4
+    li = [0]*roll_size
+    for i in range(roll_size, data.shape[0] ):
+        li += [data['severity'][(i-roll_size):i].mean()]
+    data['meanSev'] = li
+
     trace = go.Scatter(
         x=data['startDate'],
-        y=data['severity'],
+        y=data['meanSev'],
         mode='lines+markers',
         marker=dict(color='red'),
         name='Severity'

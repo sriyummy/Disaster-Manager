@@ -17,6 +17,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.10.1",
+    "react-router-dom": "^7.1.5",
+    "react-scripts": "^5.0.1",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

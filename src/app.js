@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
 import http from 'http';
+import path from 'path'; // Import path to resolve static files
 
 import disasterRoutes from './routes/disasterRoutes.js';
 import Disaster from './models/disaster.js';
@@ -23,7 +24,17 @@ mongoose.connect(process.env.MONGODB_URI, {
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB', err));
 
+// API Routes
 app.use('/api/disasters', disasterRoutes);
+
+// Serve static files from React frontend
+const __dirname = path.resolve(); // Necessary if using ES modules
+app.use(express.static(path.join(__dirname, 'frontend-main/build')));
+
+// Serve React app for non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend-main/build', 'index.html'));
+});
 
 const server = http.createServer(app);
 
@@ -89,7 +100,6 @@ const saveFakeReportToMongo = async (newReport) => {
     console.error('Error saving to MongoDB:', error);
   }
 };
-
 
 io.on('connection', (socket) => {
   console.log('New client connected');

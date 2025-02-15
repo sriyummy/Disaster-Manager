@@ -1,0 +1,74 @@
+// Inside app.js or the file where you generate fake data
+import Disaster from './models/disaster.js'; // Import the Disaster model
+
+const generateFakeReport = () => {
+  const latitude = faker.number.float({
+    min: cityBounds.minLat,
+    max: cityBounds.maxLat,
+    precision: 0.0001,
+  });
+
+  const longitude = faker.number.float({
+    min: cityBounds.minLng,
+    max: cityBounds.maxLng,
+    precision: 0.0001,
+  });
+
+  return {
+    id: faker.string.uuid(),
+    victimName: faker.person.fullName(),
+    contact: faker.phone.number(),
+    location: { latitude, longitude },
+    severity: faker.helpers.weightedArrayElement([
+      { weight: 7, value: "Low" },
+      { weight: 5, value: "Moderate" },
+      { weight: 3, value: "High" },
+      { weight: 1, value: "Critical" },
+    ]),
+    reportTime: new Date().toLocaleTimeString(),
+    needs: faker.helpers.arrayElements(["Food", "Water", "Shelter", "Medical Aid"], 2),
+  };
+};
+
+// Save each generated report into MongoDB
+const saveFakeReportToMongo = async (newReport) => {
+  try {
+    const disaster = new Disaster({
+      name: newReport.victimName,
+      type: 'Disaster', // You can update this field depending on the type of disaster
+      location: {
+        type: 'Point',
+        coordinates: [newReport.location.longitude, newReport.location.latitude],
+      },
+      severity: mapSeverityToNumber(newReport.severity),
+      startDate: new Date(), // You can set this based on the fake report's timestamp
+      description: `Needs: ${newReport.needs.join(', ')}`, // Combine needs into a description
+      affectedAreas: [], // Optionally, you can fill affected areas if needed
+    });
+
+    // Save the disaster report to MongoDB
+    await disaster.save();
+    console.log('Disaster saved to MongoDB:', disaster);
+  } catch (error) {
+    console.error('Error saving to MongoDB:', error);
+  }
+};
+
+// WebSocket connection and event handler
+io.on('connection', (socket) => {
+  console.log('New client connected');
+
+  (function loop() {
+    const randomDelay = Math.round(Math.random() * (high - low)) + low;
+    setTimeout(async function () {
+      const newReport = generateFakeReport();
+      io.emit('new-disaster', newReport); // Emit the new disaster data to all connected clients
+      console.log('Sent:', newReport);
+
+      // Save the generated report to MongoDB
+      await saveFakeReportToMongo(newReport);
+
+      loop(); // Continue the loop to generate new reports periodically
+    }, randomDelay);
+  })();
+});

@@ -1,0 +1,70 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+}
+
+h2 {
+    background: #2c3e50;
+    color: white;
+    padding: 15px;
+    margin: 0;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 60px); /* subtract header height */
+}
+
+#map {
+    width: 75%;
+    height: 100%;
+}
+
+#report {
+    width: 25%;
+    height: 100%;
+    background: #ffffff;
+    overflow-y: auto;
+    padding: 10px;
+    box-shadow: -2px 0px 4px rgba(0, 0, 0, 0.1);
+}
+
+.report-item {
+    border-bottom: 1px solid #ddd;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+/* Severity styles */
+.severity-low {
+    color: green;
+    font-weight: bold;
+}
+
+.severity-moderate {
+    color: orange;
+    font-weight: bold;
+}
+
+.severity-high {
+    color: red;
+    font-weight: bold;
+}
+
+.severity-critical {
+    color: darkred;
+    font-weight: bold;
+}
+
+/* Blinking effect for highlighting if needed */
+.blink {
+    animation: blink-animation 1s infinite alternate;
+}
+@keyframes blink-animation {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+}

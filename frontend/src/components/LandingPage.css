@@ -1,0 +1,35 @@
+/* src/components/LandingPage.css */
+.landing-container {
+    text-align: center;
+    padding: 50px;
+  }
+  
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .subheading {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  
+  .options-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .option-button {
+    padding: 15px 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .option-button:hover {
+    background-color: #0056b3;
+  }
+  

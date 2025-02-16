@@ -12,10 +12,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@faker-js/faker": "^9.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.10.1"
+    "leaflet.animatedmarker": "^1.0.0",
+    "mongoose": "^8.10.1",
+    "react-router-dom": "^7.1.5",
+    "react-scripts": "^5.0.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

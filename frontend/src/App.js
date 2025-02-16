@@ -1,20 +1,17 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import LiveDisasterReports from './components/LiveDisasterReports';
-import NewDisasterForm from './components/NewDisasterForm';
-import './App.css';
+// src/App.js
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LandingPage from "./components/LandingPage";
+import LatestAlerts from "./components/LatestAlerts";
+import "./App.css";
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/live-disasters" element={<LiveDisasterReports />} />
-          <Route path="/new-disaster" element={<NewDisasterForm />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/latest-alerts" element={<LatestAlerts />} />
+      </Routes>
     </Router>
   );
 }

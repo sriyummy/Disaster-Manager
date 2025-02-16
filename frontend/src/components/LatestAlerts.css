@@ -1,0 +1,20 @@
+/* src/components/LatestAlerts.css */
+.alerts-container {
+    padding: 20px;
+  }
+  
+  .alerts-container h2 {
+    font-size: 1.5rem;
+  }
+  
+  .alerts-container ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .alerts-container li {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+  

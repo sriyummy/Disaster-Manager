@@ -1,15 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     var truckTime = 0;
-    const sendTruckEvery = 75;
+    const sendTruckEvery = 100;
+    const remPoints = 4;
+    const truckInt = 450;
     setInterval(() => {
       truckTime += 1;
     }, 100);
-  
-    function pause(time) {
-      return new Promise((resolve) => {
-        setTimeout(resolve, time);
-      });
-    }
   
     const map = L.map("map").setView([21.2514, 81.6296], 12.4);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -29,12 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
       fillOpacity: 0.1
     }).addTo(map);
   
-    // Define major localities with an initial report count and an empty marker array.
+    // Define localities with initial report count and empty marker array
     const localities = [
-      { name: "Pandri", lat: 21.2800, lng: 81.68, count: 0, imp: 0, markers: [] },
-      { name: "Naya Raipur", lat: 21.2100, lng: 81.6000, count: 0, imp: 0, markers: [] },
-      { name: "Aranya", lat: 21.2300, lng: 81.6600, count: 0, imp: 0, markers: [] },
-      { name: "Civil Lines", lat: 21.2750, lng: 81.59, count: 0, imp: 0, markers: [] }
+      { name: "Pandri", lat: 21.2800, lng: 81.68, count: 0, imp: 0, markers: [], importances: [] },
+      { name: "Naya Raipur", lat: 21.2100, lng: 81.6000, count: 0, imp: 0, markers: [], importances: [] },
+      { name: "Aranya", lat: 21.2300, lng: 81.6600, count: 0, imp: 0, markers: [], importances: [] },
+      { name: "Civil Lines", lat: 21.2750, lng: 81.59, count: 0, imp: 0, markers: [], importances: [] }
     ];
   
     let localityMarkers = {};
@@ -59,8 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
   
     let currentHighlightedLocality = null;
     let warehouseToLocalityLine = null;
-  
-    // Global variable for truck destination.
+    // coords for truck
+    let currentRouteCoordinates = null;
     let currentTruckDestination = null;
   
     async function startAnim(coords) {
@@ -69,71 +65,85 @@ document.addEventListener("DOMContentLoaded", () => {
         color: "red",
         opacity: 0.6
       }).addTo(map);
-      // Use the AnimatedMarker plugin (ensure it’s loaded in your HTML).
+
+
       var myMovingMarker = new L.AnimatedMarker(coordinateArray, {
-        interval: 1000,
-        autostart: true
-      });
-      map.addLayer(myMovingMarker);
-  
-      console.log('Truck started along route.');
-      await pause(25000);
-      console.log('Truck reached destination.');
-      map.removeLayer(myPolyline);
-      map.removeLayer(myMovingMarker);
-  
-      // When truck reaches the red marker, remove the 5 closest points from that locality.
-      if (currentHighlightedLocality) {
-        const localityCenter = L.latLng(currentHighlightedLocality.lat, currentHighlightedLocality.lng);
-        let markers = currentHighlightedLocality.markers || [];
-        if (markers.length > 0) {
-          // Sort the markers by distance from the locality center.
-          let sortedMarkers = markers.slice().sort((a, b) => {
-            let da = a.getLatLng().distanceTo(localityCenter);
-            let db = b.getLatLng().distanceTo(localityCenter);
-            return da - db;
-          });
-          // Get the closest 5 markers (or all if fewer than 5).
-          let markersToRemove = sortedMarkers.slice(0, 5);
-          markersToRemove.forEach(marker => {
-            console.log("Removing marker at", marker.getLatLng());
-            marker.remove();
-          });
-          // Update the locality's markers array.
-          currentHighlightedLocality.markers = markers.filter(m => !markersToRemove.includes(m));
-          // Update the count.
-          currentHighlightedLocality.count -= markersToRemove.length;
-          if (currentHighlightedLocality.count < 0) {
-            currentHighlightedLocality.count = 0;
+        interval: truckInt,
+        autostart: true,
+        onEnd: (()=>{
+          map.removeLayer(myPolyline);
+          map.removeLayer(myMovingMarker);
+
+          // remove the 5 closest points from that locality.
+          if (currentHighlightedLocality) {
+            const localityCenter = L.latLng(currentHighlightedLocality.lat, currentHighlightedLocality.lng);
+            let markers = currentHighlightedLocality.markers || [];
+            if (markers.length > 0) {
+              // Sort the markers by distance 
+              let sortedMarkers = markers.slice().sort((a, b) => {
+                let da = a.getLatLng().distanceTo(localityCenter);
+                let db = b.getLatLng().distanceTo(localityCenter);
+                return da - db;
+              });
+              // Get the closest 5 markers
+              let markersToRemove = sortedMarkers.slice(0, remPoints);
+              markersToRemove.forEach(marker => {
+                console.log("Removing marker at", marker.getLatLng());
+                marker.remove();
+                console.log(marker);
+              });
+
+              currentHighlightedLocality.markers = markers.filter(m => !markersToRemove.includes(m));
+
+              currentHighlightedLocality.count -= markersToRemove.length;
+              if (currentHighlightedLocality.count < 0) {
+                currentHighlightedLocality.count = 0;
+              }
+
+              // In max-first fashion subtract the highest importance values corresponding to the removed markers.
+              if (currentHighlightedLocality.importances && currentHighlightedLocality.importances.length > 0) {
+                // Sort importance values in descending order.
+                currentHighlightedLocality.importances.sort((a, b) => b - a);
+                const numToRemove = Math.min(remPoints, currentHighlightedLocality.importances.length);
+                let totalRemovedImp = 0;
+                for (let i = 0; i < numToRemove; i++) {
+                  totalRemovedImp += currentHighlightedLocality.importances[i];
+                }
+                // Remove highest importance values
+                currentHighlightedLocality.importances.splice(0, numToRemove);
+                // Subtract from overall importance
+                currentHighlightedLocality.imp -= totalRemovedImp;
+                if (currentHighlightedLocality.imp < 0) {
+                  currentHighlightedLocality.imp = 0;
+                }
+              }
+
+            }
           }
-          updateLocalityDisplay();
+          console.log('Truck reached destination.');
           updateLocalityMarkers();
-        }
-      }
+        })
+      });
+      console.log('Truck started along route.');
+      map.addLayer(myMovingMarker);
     }
   
     async function updateWarehouseToLocalityPath(locality) {
-      let x = 4;
-      while (warehouseToLocalityLine && x > 0) {
+      if (warehouseToLocalityLine) {
         map.removeLayer(warehouseToLocalityLine);
-        x = x - 3;
       }
       const result = await getRouteData(warehouseLocation[0], warehouseLocation[1], locality.lat, locality.lng);
       if (result) {
         // Convert OSRM coordinates ([lon, lat]) to [lat, lon] for Leaflet.
-        const routeCoordinates = result.geometry.map(coord => [coord[1], coord[0]]);
-        warehouseToLocalityLine = L.polyline(routeCoordinates, {
+        currentRouteCoordinates  = result.geometry.map(coord => [coord[1], coord[0]]);
+        warehouseToLocalityLine = L.polyline(currentRouteCoordinates , {
           color: "blue",
           weight: 3,
           opacity: 0.3
         }).addTo(map);
   
-        if (routeCoordinates && truckTime > sendTruckEvery) {
-          // Set truck destination as the last coordinate.
-          currentTruckDestination = routeCoordinates[routeCoordinates.length - 1];
-          startAnim(routeCoordinates);
-          truckTime = 0;
-        }
+          currentTruckDestination = currentRouteCoordinates[currentRouteCoordinates.length - 1];
+          console.log('updated warehouse path')
       }
     }
   
@@ -150,10 +160,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function updateLocalityMarkers() {
-      let maxCount = Math.max(...localities.map(l => l.count));
+      let highlightedLocality = 0;
+      let highlightName = '';
+      localities.forEach(locality => {
+        if (locality.imp > highlightedLocality) {
+          highlightedLocality = locality.imp;
+          highlightName = locality.name;
+        }
+      });
       localities.forEach(locality => {
         const marker = localityMarkers[locality.name];
-        if (locality.count === maxCount && maxCount > 0) {
+        if (locality.name === highlightName) {
+            console.log(highlightedLocality);
           marker.setStyle({ color: "red", fillColor: "red", fillOpacity: 0.8 });
           marker.bindPopup(`${locality.name} is most affected! Count: ${locality.count}`);
           if (!currentHighlightedLocality || currentHighlightedLocality.name !== locality.name) {
@@ -229,27 +247,43 @@ document.addEventListener("DOMContentLoaded", () => {
   
       if (closest) {
         // Draw a faint dashed line from the report point to the nearest locality.
-        L.polyline([
-          [report.location.latitude, report.location.longitude],
-          [closest.lat, closest.lng]
-        ], {
-          color: "#aaa",
-          weight: 1,
-          opacity: 0.85,
-          dashArray: "5,5"
-        }).addTo(map);
+        // L.polyline([
+        //   [report.location.latitude, report.location.longitude],
+        //   [closest.lat, closest.lng]
+        // ], {
+        //   color: "#aaa",
+        //   weight: 1,
+        //   opacity: 0.85,
+        //   dashArray: "5,5"
+        // }).addTo(map);
   
-        // Increase the count for that locality.
         closest.count += 1;
-        // Also store this report marker in the locality's marker array.
+        // store this report marker in the locality's marker array && add custom heuristic
         closest.markers.push(reportMarker);
+
+        var add = heuristic(minDistance, report.severity);
+        if(add){
+            closest.imp += add;
+            closest.importances.push(add);
+            console.log(add);
+        }
   
         console.log(heuristic(minDistance, report.severity));
-        setInterval(() => {
-          updateLocalityDisplay();
-        }, 1000);
-        updateLocalityMarkers();
+        updateLocalityDisplay();
+
+        setInterval(()=>{
+          updateLocalityMarkers();
+        }, 2000);
       }
+
+      function periodicTruckDispatch() {
+        if (currentRouteCoordinates && truckTime > sendTruckEvery){
+          console.log("Time elapsed and route available. Dispatching truck...");
+          startAnim(currentRouteCoordinates);
+          truckTime = 0; // reset the timer after dispatch
+        }
+        }
+      setInterval(periodicTruckDispatch, 1000);
   
       const reportList = document.getElementById("report-list");
       const reportItem = document.createElement("div");
